@@ -1,5 +1,7 @@
 export * from "./Collection.js";
 
+export type { DiscordConnection } from "./AccountCollection.js";
+export { AccountCollection } from "./AccountCollection.js";
 export { BotCollection } from "./BotCollection.js";
 export { ChannelCollection } from "./ChannelCollection.js";
 export { ChannelUnreadCollection } from "./ChannelUnreadCollection.js";

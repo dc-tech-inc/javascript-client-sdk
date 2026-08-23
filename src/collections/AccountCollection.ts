@@ -4,6 +4,18 @@ import type { Client } from "../Client.js";
 import { MFA, MFATicket } from "../classes/MFA.js";
 
 /**
+ * Snapshot of a linked Discord account, as returned by the backend.
+ *
+ * Fork-only addition - not part of the pinned `stoat-api` OpenAPI types,
+ * hence defined locally rather than imported from there.
+ */
+export interface DiscordConnection {
+  id: string;
+  username: string;
+  avatar: string | null;
+}
+
+/**
  * Utility functions for working with accounts
  */
 export class AccountCollection {
@@ -18,11 +30,66 @@ export class AccountCollection {
   }
 
   /**
+   * Escape hatch for endpoints this fork's backend adds that aren't in the
+   * pinned `stoat-api` package's generated route types.
+   */
+  private get rawApi() {
+    return this.client.api as unknown as {
+      get(path: string): Promise<unknown>;
+      post(path: string, body?: unknown): Promise<unknown>;
+      delete(path: string): Promise<void>;
+    };
+  }
+
+  /**
    * Fetch current account email
    * @returns Email
    */
   async fetchEmail(): Promise<string> {
     return (await this.client.api.get("/auth/account/")).email;
+  }
+
+  /**
+   * Fetch the Discord account currently linked to this account (if any), and
+   * whether it's currently safe to unlink it (i.e. a real password has been
+   * set - unlinking the only login method would lock the account out).
+   */
+  async fetchDiscordConnection(): Promise<{
+    connection: DiscordConnection | null;
+    canUnlink: boolean;
+  }> {
+    const account = await this.rawApi.get("/auth/account/");
+    const data = account as {
+      discord?: DiscordConnection | null;
+      password_is_generated?: boolean;
+    };
+    return {
+      connection: data.discord ?? null,
+      canUnlink: !data.password_is_generated,
+    };
+  }
+
+  /**
+   * Link a Discord account to the current account
+   * @param code OAuth authorization code from the Discord redirect
+   * @returns The newly linked Discord connection
+   */
+  async linkDiscord(code: string): Promise<DiscordConnection> {
+    // Endpoint responds with the full account info, mirroring GET /auth/account/
+    const account = await this.rawApi.post(
+      "/auth/account/connections/discord",
+      {
+        code,
+      },
+    );
+    return (account as { discord: DiscordConnection }).discord;
+  }
+
+  /**
+   * Remove the Discord account linked to the current account
+   */
+  unlinkDiscord(): Promise<void> {
+    return this.rawApi.delete("/auth/account/connections/discord");
   }
 
   /**
