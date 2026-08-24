@@ -198,6 +198,17 @@ export class Server {
   }
 
   /**
+   * Tags associated with this server, used for discoverability
+   */
+  get tags(): string[] {
+    return (
+      this.#collection.getUnderlyingObject(this.id) as {
+        tags?: string[];
+      }
+    ).tags ?? [];
+  }
+
+  /**
    * Whether this server is marked as mature
    */
   get mature(): boolean {
