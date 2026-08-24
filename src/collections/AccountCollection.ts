@@ -37,6 +37,7 @@ export class AccountCollection {
     return this.client.api as unknown as {
       get(path: string): Promise<unknown>;
       post(path: string, body?: unknown): Promise<unknown>;
+      patch(path: string, body?: unknown): Promise<unknown>;
       delete(path: string): Promise<void>;
     };
   }
@@ -47,6 +48,25 @@ export class AccountCollection {
    */
   async fetchEmail(): Promise<string> {
     return (await this.client.api.get("/auth/account/")).email;
+  }
+
+  /**
+   * Fetch account info (id, email, linked Discord connection, and whether
+   * the current password was generated automatically by the system).
+   */
+  async fetchAccountInfo(): Promise<{
+    id: string;
+    email: string;
+    discord: DiscordConnection | null;
+    password_is_generated: boolean;
+  }> {
+    const account = await this.rawApi.get("/auth/account/");
+    return account as {
+      id: string;
+      email: string;
+      discord: DiscordConnection | null;
+      password_is_generated: boolean;
+    };
   }
 
   /**
@@ -165,13 +185,15 @@ export class AccountCollection {
   /**
    * Change account password
    * @param newPassword New password
-   * @param currentPassword Current password
+   * @param currentPassword Current password. Optional when the current
+   * password was generated automatically (e.g. account created via Discord
+   * login) - the backend skips verification in that case.
    */
-  changePassword(newPassword: string, currentPassword: string): Promise<void> {
-    return this.client.api.patch("/auth/account/change/password", {
+  changePassword(newPassword: string, currentPassword?: string): Promise<void> {
+    return this.rawApi.patch("/auth/account/change/password", {
       password: newPassword,
-      current_password: currentPassword,
-    });
+      ...(currentPassword ? { current_password: currentPassword } : {}),
+    }) as Promise<void>;
   }
 
   /**
