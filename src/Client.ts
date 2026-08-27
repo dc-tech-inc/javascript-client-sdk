@@ -101,6 +101,15 @@ export type Events = {
   emojiDelete: [emoji: HydratedEmoji];
 
   userSlowmodes: [];
+
+  voiceCallUpdate: [
+    data: {
+      initiatorId: string;
+      channelId: string;
+      startedAt: number | null;
+      ended: boolean;
+    },
+  ];
 };
 
 /**

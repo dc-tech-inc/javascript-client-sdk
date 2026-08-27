@@ -188,6 +188,13 @@ type ServerMessage =
       user: string;
     }
   | {
+      type: "VoiceCallUpdate";
+      initiator_id: string;
+      channel_id: string;
+      started_at: number | null;
+      ended: boolean;
+    }
+  | {
       type: "VoiceChannelMove";
       user: string;
       from: string;
@@ -998,6 +1005,15 @@ export async function handleEvent(
         );
         // todo: event
       }
+      break;
+    }
+    case "VoiceCallUpdate": {
+      client.emit("voiceCallUpdate", {
+        initiatorId: event.initiator_id,
+        channelId: event.channel_id,
+        startedAt: event.started_at,
+        ended: event.ended,
+      });
       break;
     }
     case "VoiceChannelLeave": {
