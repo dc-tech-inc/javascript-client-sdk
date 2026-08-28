@@ -839,6 +839,26 @@ export class Channel {
   }
 
   /**
+   * Join the 3D view of this voice channel.
+   *
+   * Returns a short-lived bridge token plus the base URL of the 3D service.
+   * The web client opens `url/bridge/<channelId>?token=<token>` in an iframe
+   * to render the 3D layer of the call. Audio stays in the classic call.
+   *
+   * @returns `{ token, url }` or throws when the feature is disabled
+   */
+  async join3D(): Promise<{ token: string; url: string }> {
+    // join_3d is a Roomly-specific route not present in the upstream stoat
+    // OpenAPI route table, so cast through the untyped client.
+    const api = this.#collection.client.api as unknown as {
+      post: (path: string) => Promise<unknown>;
+    };
+    return (await api.post(
+      `/channels/${this.id as ""}/join_3d`,
+    )) as { token: string; url: string };
+  }
+
+  /**
    * Start typing in this channel
    * @requires `DirectMessage`, `Group`, `TextChannel`
    */
