@@ -31,7 +31,11 @@ export type HydratedChannel = {
 
   lastMessageId?: string;
 
-  voice?: { maxUsers?: number };
+  voice?: {
+    maxUsers?: number;
+    threeDEnabled?: boolean;
+    threeDTemplate?: string;
+  };
 };
 
 export const channelHydration: Hydrate<Merge<APIChannel>, HydratedChannel> = {
@@ -83,6 +87,14 @@ export const channelHydration: Hydrate<Merge<APIChannel>, HydratedChannel> = {
       channel.channel_type === "Group"
         ? {
             maxUsers: channel.voice?.max_users || undefined,
+            // Roomly-specific 3D layer fields (not in the upstream stoat
+            // OpenAPI schema, so read through the untyped voice object).
+            threeDEnabled: (channel.voice as
+              | { three_d_enabled?: boolean }
+              | undefined)?.three_d_enabled,
+            threeDTemplate: (channel.voice as
+              | { three_d_template?: string }
+              | undefined)?.three_d_template,
           }
         : undefined,
   },

@@ -346,6 +346,27 @@ export class Channel {
   }
 
   /**
+   * Whether the 3D room layer is enabled for this voice channel.
+   *
+   * `false` means the channel is voice-only (admins disabled the 3D
+   * layer); `undefined` means it follows the instance default.
+   * Roomly-specific: not present in the upstream stoat schema.
+   */
+  get threeDEnabled(): boolean | undefined {
+    return this.#collection.getUnderlyingObject(this.id).voice
+      ?.threeDEnabled as boolean | undefined;
+  }
+
+  /**
+   * 3D room template chosen for this voice channel (e.g. LOUNGE, CINEMA).
+   * Roomly-specific: not present in the upstream stoat schema.
+   */
+  get threeDTemplate(): string | undefined {
+    return this.#collection.getUnderlyingObject(this.id).voice
+      ?.threeDTemplate as string | undefined;
+  }
+
+  /**
    * URL to the channel icon
    */
   get iconURL(): string | undefined {
