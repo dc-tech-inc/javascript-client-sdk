@@ -19,7 +19,7 @@ export class UserCollection extends ClassCollection<User, HydratedUser> {
     const SYSTEM_ID = "0".repeat(26);
     this.getOrCreate(SYSTEM_ID, {
       _id: SYSTEM_ID,
-      username: "Revolt",
+      username: "Roomly",
       discriminator: "0000",
       online: true,
       relationship: "None",
