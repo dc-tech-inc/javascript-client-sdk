@@ -220,7 +220,7 @@ export class Client extends AsyncEventEmitter<Events> {
     super();
 
     this.options = {
-      baseURL: "https://stoat.chat/api",
+      baseURL: "https://roomly.life/api",
       partials: false,
       eagerFetching: true,
       syncUnreads: false,
@@ -337,14 +337,14 @@ export class Client extends AsyncEventEmitter<Events> {
   }
 
   /**
-   * Connect to Revolt
+   * Connect to Roomly
    */
   connect(): void {
     clearTimeout(this.#reconnectTimeout);
     this.events.disconnect();
     this.#setReady(false);
     this.events.connect(
-      this.configuration?.ws ?? "wss://stoat.chat/events",
+      this.configuration?.ws ?? "wss://roomly.life/events",
       typeof this.#session === "string" ? this.#session : this.#session!.token,
     );
   }

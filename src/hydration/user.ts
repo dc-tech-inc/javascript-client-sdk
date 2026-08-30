@@ -26,6 +26,7 @@ export type HydratedUser = {
 
   avatar?: File;
   pronouns?: string;
+  characterId?: string;
   status?: UserStatus;
   bot?: BotInformation;
 };
@@ -51,6 +52,10 @@ export const userHydration: Hydrate<APIUser, HydratedUser> = {
 
     avatar: (user, ctx) => new File(ctx as Client, user.avatar!),
     pronouns: (user) => user.pronouns,
+    // Roomly-specific 3D character field (not in the upstream stoat
+    // OpenAPI schema, so read through an untyped view of the raw user).
+    characterId: (user) =>
+      (user as APIUser & { character_id?: string }).character_id,
     status: (user) => user.status!,
     bot: (user) => user.bot!,
   },

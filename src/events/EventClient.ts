@@ -95,7 +95,7 @@ export class EventClient<
   #connectTimeoutReference: number | undefined;
 
   #lastError: // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  { type: "socket"; data: any } | { type: "revolt"; data: Error } | undefined;
+  { type: "socket"; data: any } | { type: "roomly"; data: Error } | undefined;
 
   /**
    * Create a new event client.
@@ -255,7 +255,7 @@ export class EventClient<
         return;
       case "Error":
         this.#lastError = {
-          type: "revolt",
+          type: "roomly",
           data: event.data,
         };
         this.emit("error", event.data);
@@ -296,7 +296,7 @@ export class EventClient<
         data: any;
       }
     | {
-        type: "revolt";
+        type: "roomly";
         data: Error;
       }
     | undefined {

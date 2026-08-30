@@ -101,6 +101,13 @@ export class User {
   }
 
   /**
+   * 3D character id used in the 3D room service (bridge mode)
+   */
+  get characterId(): string | undefined {
+    return this.#collection.getUnderlyingObject(this.id).characterId;
+  }
+
+  /**
    * Badges
    */
   get badges(): number {
