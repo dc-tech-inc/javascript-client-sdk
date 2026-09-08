@@ -16,6 +16,40 @@ export interface DiscordConnection {
 }
 
 /**
+ * Record of the age/policy declaration made at sign-up, as visible to the
+ * account holder themselves.
+ *
+ * Fork-only addition - not part of the pinned `stoat-api` OpenAPI types.
+ */
+export interface PolicyAcceptanceInfo {
+  version: string;
+  accepted_at: string;
+}
+
+/**
+ * Response shape of `GET /auth/account/`.
+ *
+ * Fork-only addition - not part of the pinned `stoat-api` OpenAPI types.
+ */
+export interface AccountInfo {
+  id: string;
+  email: string;
+  discord: DiscordConnection | null;
+  password_is_generated: boolean;
+  /** Birth date declared at sign-up (`YYYY-MM-DD`), if recorded */
+  birth_date?: string | null;
+  /** Policy acceptance recorded at sign-up, if any */
+  policy_acceptance?: PolicyAcceptanceInfo | null;
+  /**
+   * Whether this account still owes the age and policy declaration (e.g.
+   * created via "Continue with Discord", or predating the sign-up gate).
+   * The client is expected to require `completeDeclaration()` before
+   * letting the person use the app.
+   */
+  declaration_pending: boolean;
+}
+
+/**
  * Utility functions for working with accounts
  */
 export class AccountCollection {
@@ -38,6 +72,7 @@ export class AccountCollection {
       get(path: string): Promise<unknown>;
       post(path: string, body?: unknown): Promise<unknown>;
       patch(path: string, body?: unknown): Promise<unknown>;
+      put(path: string, body?: unknown): Promise<unknown>;
       delete(path: string): Promise<void>;
     };
   }
@@ -51,22 +86,32 @@ export class AccountCollection {
   }
 
   /**
-   * Fetch account info (id, email, linked Discord connection, and whether
-   * the current password was generated automatically by the system).
+   * Fetch account info (id, email, linked Discord connection, whether the
+   * current password was generated automatically by the system, and the
+   * age/policy declaration state).
    */
-  async fetchAccountInfo(): Promise<{
-    id: string;
-    email: string;
-    discord: DiscordConnection | null;
-    password_is_generated: boolean;
-  }> {
+  async fetchAccountInfo(): Promise<AccountInfo> {
     const account = await this.rawApi.get("/auth/account/");
-    return account as {
-      id: string;
-      email: string;
-      discord: DiscordConnection | null;
-      password_is_generated: boolean;
-    };
+    return account as AccountInfo;
+  }
+
+  /**
+   * Record the age and policy declaration for an account that never made
+   * one (e.g. created via "Continue with Discord", or predating the sign-up
+   * gate). Mirrors `GET /auth/account/`'s `declaration_pending` field: the
+   * client is expected to call this whenever that flag is true, before
+   * letting the person use the app.
+   *
+   * Fork-only addition, hence the `rawApi` escape hatch rather than a typed
+   * `stoat-api` route - see the class doc above.
+   * @param data Birth date (`YYYY-MM-DD`) and the policy package version shown
+   */
+  async completeDeclaration(data: {
+    birth_date: string;
+    policy_version?: string;
+  }): Promise<AccountInfo> {
+    const account = await this.rawApi.put("/auth/account/declaration", data);
+    return account as AccountInfo;
   }
 
   /**
