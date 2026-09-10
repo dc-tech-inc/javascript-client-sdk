@@ -603,7 +603,7 @@ export class Client extends AsyncEventEmitter<Events> {
     body.append("file", file);
 
     const [key, value] = this.authenticationHeader;
-    const data: { id: string } = await fetch(
+    const res = await fetch(
       `${uploadUrl ?? this.configuration?.features.autumn.url}/${tag}`,
       {
         method: "POST",
@@ -612,9 +612,14 @@ export class Client extends AsyncEventEmitter<Events> {
           [key]: value,
         },
       },
-    ).then((res) => res.json());
+    );
 
-    return data.id;
+    const data = await res.json();
+    if (!res.ok) {
+      throw data;
+    }
+
+    return (data as { id: string }).id;
   }
 
   /**
