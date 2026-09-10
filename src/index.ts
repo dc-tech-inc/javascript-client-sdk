@@ -7,6 +7,6 @@ export { ConnectionState, EventClient } from "./events/EventClient.js";
 export { ProtocolV1 } from "./events/v1.js";
 export { BotFlags } from "./hydration/bot.js";
 export { ServerFlags } from "./hydration/server.js";
-export { UserBadges, UserFlags } from "./hydration/user.js";
+export { UserBadges, UserFlags, UserPlan } from "./hydration/user.js";
 export * from "./lib/regex.js";
 export * from "./permissions/definitions.js";
