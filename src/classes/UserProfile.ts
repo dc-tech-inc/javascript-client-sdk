@@ -12,6 +12,15 @@ export class UserProfile {
   readonly banner?: File;
 
   /**
+   * Accent colour for the profile, as a 6-digit hex string (e.g. `#5865F2`)
+   *
+   * This is a fork-specific field (`theme_color`) not part of the pinned
+   * `stoat-api` package's `UserProfile` type, so it is read via a cast --
+   * same pattern used for `character_id` elsewhere in this fork.
+   */
+  readonly themeColor?: string;
+
+  /**
    * Construct Public Bot
    * @param client Client
    * @param data Data
@@ -21,6 +30,9 @@ export class UserProfile {
     this.banner = data.background
       ? new File(client, data.background)
       : undefined;
+    this.themeColor = (
+      data as APIUserProfile & { theme_color?: string }
+    ).theme_color;
   }
 
   /**
