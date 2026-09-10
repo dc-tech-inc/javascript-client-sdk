@@ -66,15 +66,62 @@ export class AccountCollection {
   /**
    * Escape hatch for endpoints this fork's backend adds that aren't in the
    * pinned `stoat-api` package's generated route types.
+   *
+   * Only safe for requests that carry no body. `API.req()` builds the body by
+   * looking the path up in the generated route table and skips the whole loop
+   * when it finds nothing:
+   *
+   * ```js
+   * let named = getPathName(path);
+   * if (named && typeof params === "object") { ...fills body... }
+   * ```
+   *
+   * A fork-only path is never in that table, so `named` is `undefined` and the
+   * request goes out with `{}` no matter what was passed. Use
+   * {@link forkRequest} whenever there is a body.
    */
   private get rawApi() {
     return this.client.api as unknown as {
       get(path: string): Promise<unknown>;
-      post(path: string, body?: unknown): Promise<unknown>;
-      patch(path: string, body?: unknown): Promise<unknown>;
-      put(path: string, body?: unknown): Promise<unknown>;
       delete(path: string): Promise<void>;
+      patch(path: string, body?: unknown): Promise<unknown>;
     };
+  }
+
+  /**
+   * Call an endpoint this fork's backend adds, sending the body verbatim.
+   *
+   * Bypasses `API.req()` entirely rather than teaching it about fork routes:
+   * the route table is generated from the pinned `stoat-api` OpenAPI schema
+   * and regenerating it is not ours to do. Mirrors the shape the rest of the
+   * SDK produces, including throwing the raw response text on failure, which
+   * is what the client's error translator expects to parse.
+   *
+   * @param method HTTP method
+   * @param path Absolute API path, e.g. `/auth/account/declaration`
+   * @param body Optional JSON body, sent as-is
+   */
+  private async forkRequest(
+    method: "POST" | "PUT" | "PATCH",
+    path: string,
+    body?: unknown,
+  ): Promise<unknown> {
+    const [header, token] = this.client.authenticationHeader;
+
+    const response = await fetch(`${this.client.options.baseURL}${path}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        [header]: token,
+      },
+      body: JSON.stringify(body ?? {}),
+    });
+
+    if (response.status === 204) return undefined;
+
+    const text = await response.text();
+    if (!response.ok) throw text;
+    return text.length ? JSON.parse(text) : undefined;
   }
 
   /**
@@ -102,15 +149,20 @@ export class AccountCollection {
    * client is expected to call this whenever that flag is true, before
    * letting the person use the app.
    *
-   * Fork-only addition, hence the `rawApi` escape hatch rather than a typed
-   * `stoat-api` route - see the class doc above.
+   * Fork-only addition, hence {@link forkRequest} rather than a typed
+   * `stoat-api` route: the generated route table has no entry for this path,
+   * and `API.req()` silently drops the body of any path it cannot find.
    * @param data Birth date (`YYYY-MM-DD`) and the policy package version shown
    */
   async completeDeclaration(data: {
     birth_date: string;
     policy_version?: string;
   }): Promise<AccountInfo> {
-    const account = await this.rawApi.put("/auth/account/declaration", data);
+    const account = await this.forkRequest(
+      "PUT",
+      "/auth/account/declaration",
+      data,
+    );
     return account as AccountInfo;
   }
 
@@ -141,11 +193,10 @@ export class AccountCollection {
    */
   async linkDiscord(code: string): Promise<DiscordConnection> {
     // Endpoint responds with the full account info, mirroring GET /auth/account/
-    const account = await this.rawApi.post(
+    const account = await this.forkRequest(
+      "POST",
       "/auth/account/connections/discord",
-      {
-        code,
-      },
+      { code },
     );
     return (account as { discord: DiscordConnection }).discord;
   }
