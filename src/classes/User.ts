@@ -121,6 +121,17 @@ export class User {
   }
 
   /**
+   * Whether the pre-call welcome modal (character + profile) should be
+   * shown before this user's next call
+   *
+   * Only meaningful on `client.user` -- the server never sends `true` for
+   * any other user's object.
+   */
+  get shouldShowWelcomeModal(): boolean {
+    return this.#collection.getUnderlyingObject(this.id).shouldShowWelcomeModal;
+  }
+
+  /**
    * Badges
    */
   get badges(): number {
@@ -277,6 +288,45 @@ export class User {
           }`,
           data,
         ),
+        this.#collection.client,
+        false,
+      ),
+    );
+  }
+
+  /**
+   * Record that the pre-call welcome modal was just shown to (and dismissed
+   * or acted on by) the current user.
+   *
+   * Fork-only addition, hence a raw `fetch` rather than `this.#collection
+   * .client.api.post`: the generated route table (from the pinned
+   * `stoat-api` package) has no entry for this path, and `API.req()`
+   * silently drops the body of any path it cannot find -- harmless here
+   * since this call has no body, but `api.post` would also refuse the path
+   * outright at the type level.
+   */
+  async ackWelcomeModal(): Promise<void> {
+    const [header, token] = this.#collection.client.authenticationHeader;
+
+    const response = await fetch(
+      `${this.#collection.client.options.baseURL}/users/@me/welcome_modal_seen`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          [header]: token,
+        },
+      },
+    );
+
+    const text = await response.text();
+    if (!response.ok) throw text;
+
+    this.#collection.updateUnderlyingObject(
+      this.id,
+      hydrate(
+        "user",
+        text.length ? JSON.parse(text) : {},
         this.#collection.client,
         false,
       ),
