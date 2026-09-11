@@ -29,6 +29,7 @@ export type HydratedUser = {
   characterId?: string;
   status?: UserStatus;
   bot?: BotInformation;
+  plan: UserPlan;
 };
 
 export const userHydration: Hydrate<APIUser, HydratedUser> = {
@@ -58,9 +59,16 @@ export const userHydration: Hydrate<APIUser, HydratedUser> = {
       (user as APIUser & { character_id?: string }).character_id,
     status: (user) => user.status!,
     bot: (user) => user.bot!,
+    // Roomly-specific subscription plan field (not in the upstream stoat
+    // OpenAPI schema, so read through an untyped view of the raw user).
+    // Purely cosmetic on the client -- used only to show a "Roomly Plus"
+    // supporter badge, never to gate any client-side behaviour.
+    plan: (user) =>
+      (user as APIUser & { plan?: UserPlan }).plan ?? UserPlan.Free,
   },
   initialHydration: () => ({
     relationship: "None",
+    plan: UserPlan.Free,
   }),
 };
 
@@ -88,4 +96,17 @@ export enum UserFlags {
   Suspended = 1,
   Deleted = 2,
   Banned = 4,
+}
+
+/**
+ * Subscription plan tier
+ *
+ * Roomly-specific field, not part of the upstream stoat OpenAPI schema.
+ * Purely cosmetic/entitlement metadata (upload limits, animated
+ * avatar/emoji, profile customization, and the "Roomly Plus" supporter
+ * badge) -- never affects permissions or moderation on the client.
+ */
+export enum UserPlan {
+  Free = "Free",
+  Plus = "Plus",
 }

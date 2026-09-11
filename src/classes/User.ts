@@ -8,6 +8,7 @@ import { decodeTime } from "ulid";
 
 import type { UserCollection } from "../collections/UserCollection.js";
 import { hydrate } from "../hydration/index.js";
+import { UserPlan } from "../hydration/user.js";
 import { U32_MAX, UserPermission } from "../permissions/definitions.js";
 
 import type { Channel } from "./Channel.js";
@@ -105,6 +106,18 @@ export class User {
    */
   get characterId(): string | undefined {
     return this.#collection.getUnderlyingObject(this.id).characterId;
+  }
+
+  /**
+   * Subscription plan
+   *
+   * Purely cosmetic outside of entitlements already granted elsewhere
+   * (upload limits, animated avatar/emoji, profile customization) --
+   * used to show a "Roomly Plus" supporter badge. Never gates any
+   * client-side behaviour.
+   */
+  get plan(): UserPlan {
+    return this.#collection.getUnderlyingObject(this.id).plan;
   }
 
   /**
