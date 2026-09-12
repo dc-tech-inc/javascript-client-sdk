@@ -30,6 +30,7 @@ export type HydratedUser = {
   status?: UserStatus;
   bot?: BotInformation;
   plan: UserPlan;
+  shouldShowWelcomeModal: boolean;
 };
 
 export const userHydration: Hydrate<APIUser, HydratedUser> = {
@@ -65,10 +66,17 @@ export const userHydration: Hydrate<APIUser, HydratedUser> = {
     // supporter badge, never to gate any client-side behaviour.
     plan: (user) =>
       (user as APIUser & { plan?: UserPlan }).plan ?? UserPlan.Free,
+    // Roomly-specific pre-call welcome modal state (not in the upstream
+    // stoat OpenAPI schema). Only ever `true` on your own user object --
+    // the server never sends it for anyone else's.
+    shouldShowWelcomeModal: (user) =>
+      (user as APIUser & { should_show_welcome_modal?: boolean })
+        .should_show_welcome_modal ?? false,
   },
   initialHydration: () => ({
     relationship: "None",
     plan: UserPlan.Free,
+    shouldShowWelcomeModal: false,
   }),
 };
 
