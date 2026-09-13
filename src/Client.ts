@@ -17,6 +17,7 @@ import { ChannelCollection } from "./collections/ChannelCollection.js";
 import { ChannelUnreadCollection } from "./collections/ChannelUnreadCollection.js";
 import { ChannelWebhookCollection } from "./collections/ChannelWebhookCollection.js";
 import { EmojiCollection } from "./collections/EmojiCollection.js";
+import { MeetingCollection } from "./collections/MeetingCollection.js";
 import { MessageCollection } from "./collections/MessageCollection.js";
 import { ServerCollection } from "./collections/ServerCollection.js";
 import { ServerMemberCollection } from "./collections/ServerMemberCollection.js";
@@ -187,6 +188,7 @@ export class Client extends AsyncEventEmitter<Events> {
   readonly channelUnreads;
   readonly channelWebhooks;
   readonly emojis;
+  readonly meetings;
   readonly messages;
   readonly servers;
   readonly serverMembers;
@@ -280,6 +282,7 @@ export class Client extends AsyncEventEmitter<Events> {
     this.channelUnreads = new ChannelUnreadCollection(this);
     this.channelWebhooks = new ChannelWebhookCollection(this);
     this.emojis = new EmojiCollection(this);
+    this.meetings = new MeetingCollection(this);
     this.messages = new MessageCollection(this);
     this.servers = new ServerCollection(this);
     this.serverMembers = new ServerMemberCollection(this);
