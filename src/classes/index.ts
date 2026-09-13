@@ -6,6 +6,7 @@ export * from "./ChannelWebhook.js";
 export * from "./Emoji.js";
 export * from "./File.js";
 export * from "./Invite.js";
+export * from "./Meeting.js";
 export * from "./Message.js";
 export * from "./MessageEmbed.js";
 export * from "./PublicBot.js";
