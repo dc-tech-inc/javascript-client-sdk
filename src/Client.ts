@@ -111,6 +111,8 @@ export type Events = {
       ended: boolean;
     },
   ];
+
+  meetingKnock: [code: string, user: User, action: "Request" | "Cancel"];
 };
 
 /**
