@@ -215,6 +215,12 @@ type ServerMessage =
   | {
       type: "UserSlowmodes";
       slowmodes: UserSlowmodes[];
+    }
+  | {
+      type: "MeetingKnock";
+      code: string;
+      user: User;
+      action: "Request" | "Cancel";
     };
 
 /**
@@ -1048,6 +1054,12 @@ export async function handleEvent(
         }
       }
       client.emit("userSlowmodes");
+      break;
+    }
+    case "MeetingKnock": {
+      const user = client.users.getOrCreate(event.user._id, event.user);
+      client.meetings.handleKnock(event.code, user, event.action);
+      client.emit("meetingKnock", event.code, user, event.action);
       break;
     }
   }

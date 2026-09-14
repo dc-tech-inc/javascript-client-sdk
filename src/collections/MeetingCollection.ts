@@ -1,3 +1,6 @@
+import { ReactiveMap } from "@solid-primitives/map";
+
+import type { User } from "../classes/User.js";
 import { Meeting } from "../classes/Meeting.js";
 import {
   APIDataCreateMeeting,
@@ -27,8 +30,62 @@ export class MeetingCollection extends ClassCollection<
   Meeting,
   HydratedMeeting
 > {
+  /**
+   * Guests waiting in the lobby, keyed by `<meeting code>:<user id>`.
+   *
+   * Populated from the `MeetingKnock` websocket event (only delivered to the
+   * host's private topic -- see `knock.rs` on the backend), there is no
+   * "list pending" endpoint to fetch this from instead. A flat map keyed by
+   * a composite string, rather than a map of maps, keeps every read here
+   * trivially reactive through `@solid-primitives/map`.
+   */
+  readonly #pendingKnocks = new ReactiveMap<string, User>();
+
   #api(): UntypedRequester {
     return this.client.api as unknown as UntypedRequester;
+  }
+
+  #knockKey(code: string, userId: string): string {
+    return `${code}:${userId}`;
+  }
+
+  /**
+   * Guests currently waiting to be admitted into a meeting
+   * @param code Meeting code
+   * @returns Pending guests, in no particular order
+   */
+  knocksFor(code: string): User[] {
+    const prefix = `${code}:`;
+    const users: User[] = [];
+    for (const [key, user] of this.#pendingKnocks.entries()) {
+      if (key.startsWith(prefix)) users.push(user);
+    }
+    return users;
+  }
+
+  /**
+   * Apply a `MeetingKnock` event
+   * @param code Meeting code
+   * @param user Guest requesting or cancelling entry
+   * @param action Request or Cancel
+   */
+  handleKnock(code: string, user: User, action: "Request" | "Cancel"): void {
+    const key = this.#knockKey(code, user.id);
+    if (action === "Request") {
+      this.#pendingKnocks.set(key, user);
+    } else {
+      this.#pendingKnocks.delete(key);
+    }
+  }
+
+  /**
+   * Drop a guest from the pending lobby list once the host has resolved
+   * their request (approved or denied) via `POST /meetings/<code>/admit`
+   * @param code Meeting code
+   * @param userId Guest's user id
+   */
+  clearKnock(code: string, userId: string): void {
+    this.#pendingKnocks.delete(this.#knockKey(code, userId));
   }
 
   /**
