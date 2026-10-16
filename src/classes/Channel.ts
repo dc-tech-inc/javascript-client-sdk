@@ -880,6 +880,27 @@ export class Channel {
   }
 
   /**
+   * Join the call as this user's screen-share identity (`<userId>:screen`).
+   *
+   * Used by the native (Android) screen capture: the web layer fetches the
+   * token and hands `{ url, token }` to the native plugin, which publishes
+   * the screen track. The user must already be in the call.
+   *
+   * @returns `{ token, url }`
+   */
+  async joinScreen(): Promise<{ token: string; url: string }> {
+    // join_screen is a Roomly-specific route not present in the upstream stoat
+    // OpenAPI route table, so cast through the untyped client.
+    const api = this.#collection.client.api as unknown as {
+      post: (path: string) => Promise<unknown>;
+    };
+    return (await api.post(`/channels/${this.id as ""}/join_screen`)) as {
+      token: string;
+      url: string;
+    };
+  }
+
+  /**
    * Start typing in this channel
    * @requires `DirectMessage`, `Group`, `TextChannel`
    */
