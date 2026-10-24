@@ -437,7 +437,7 @@ export class User {
       this.age <
       (this.#collection.client.configuration?.features.limits.global
         .new_user_hours ?? 72) *
-        3600_0000
+        3_600_000
     ) {
       return this.#collection.client.configuration?.features.limits.new_user;
     }
